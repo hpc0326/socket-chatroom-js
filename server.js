@@ -7,12 +7,12 @@ const socketIo = require('socket.io')
 
 const app = express()
 
-/*const options = {
+const options = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem'),
-}*/
+}
 
-const https_server = https.createServer( app)
+const https_server = https.createServer(options, app)
 https_server.listen(4443, '0.0.0.0')
 
 const io = socketIo(https_server, {
