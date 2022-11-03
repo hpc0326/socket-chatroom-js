@@ -13,7 +13,7 @@ const options = {
 }
 
 const https_server = https.createServer(options, app)
-https_server.listen(process.env.PORT || 3000)
+https_server.listen(process.env.PORT || 443)
 
 const io = socketIo(https_server, {
   cors: true,
