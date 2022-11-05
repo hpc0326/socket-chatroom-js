@@ -3,10 +3,10 @@ var app = express();
 const path = require('path');
 const http = require('http')
 var server = http.createServer(app);
-var io = socketIo(server);
+
 var port = process.env.PORT || 3000;
 const socketIo = require('socket.io')
-
+var io = socketIo(server);
 server.listen(port, () => {
   console.log('Server listening at port %d', port);
 });
