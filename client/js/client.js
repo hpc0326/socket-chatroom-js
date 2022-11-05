@@ -12,9 +12,10 @@ let socket
 let room
 
 btnConnect.onclick = () => {
-  const url = 'wss://20.189.104.97:4443'
-  socket = io(url)
-  console.log(url)
+  //const url = 'wss://20.189.104.97:4443'
+  const url = 'http://localhost:3000'
+  socket = io()
+  //console.log(url)
 
   socket.on('joined', (room, id) => {
     btnConnect.disabled = true

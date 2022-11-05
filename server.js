@@ -1,36 +1,21 @@
-'use strict'
-var express = require('express');
+const express = require('express');
 var app = express();
-
-// var io = require('../..')(server);
-// New:
-
-const https = require('https')
+const path = require('path');
 const http = require('http')
-const fs = require('fs')
-
-const socketIo = require('socket.io')
-
-
-
-/*const options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem'),
-}
-
-const https_server = https.createServer(options, app)
-https_server.listen(process.env.PORT || 443)
-
-const io = socketIo(https_server, {
-  cors: true,
-})*/
-
 var server = http.createServer(app);
 var io = socketIo(server);
 var port = process.env.PORT || 3000;
+const socketIo = require('socket.io')
 
 server.listen(port, () => {
   console.log('Server listening at port %d', port);
+});
+
+app.use(express.static(path.join(__dirname, 'client')));
+
+
+app.get('/', function(req, res){
+  res.render('./client/index.html');
 });
 
 // 收到使用者連線
