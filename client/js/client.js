@@ -7,13 +7,16 @@ const btnLeave = document.querySelector('button#leave')
 const outputArea = document.querySelector('textarea#output')
 const inputArea = document.querySelector('textarea#input')
 const btnSend = document.querySelector('button#send')
+const btncreateChannel = document.querySelector('button#createChannel')
 
 let socket
 let room
 
-btnConnect.onclick = () => {
+
+btncreateChannel.onclick = () => {
   //const url = 'wss://20.189.104.97:4443'
-  const url = 'http://localhost:3000'
+  //const url = 'http://localhost:3000'
+  room = inputRoom.value
   socket = io()
   //console.log(url)
 
@@ -46,7 +49,7 @@ btnConnect.onclick = () => {
     btnSend.disabled = true
   })
 
-  room = inputRoom.value
+  
   socket.emit('join', room)
 }
 

@@ -7,6 +7,8 @@ var server = http.createServer(app);
 var port = process.env.PORT || 3000;
 const socketIo = require('socket.io')
 var io = socketIo(server);
+
+
 server.listen(port, () => {
   console.log('Server listening at port %d', port);
 });
@@ -18,6 +20,7 @@ app.get('/', function(req, res){
   res.render('./client/index.html');
 });
 
+//socket part
 // 收到使用者連線
 io.sockets.on('connection', (socket) => {
     console.log(socket.id, '已連線')
@@ -37,3 +40,10 @@ io.sockets.on('connection', (socket) => {
       socket.emit('leave', room, socket.id)
     })
   })
+
+//WebRTC part
+const channelId = document.getElementById('ChannelID')
+const pushing = document.getElementById('streaming')
+const pulling = document.getElementById('pulling')
+
+
