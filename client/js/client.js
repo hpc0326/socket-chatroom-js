@@ -1,5 +1,8 @@
 'use strict'
 
+
+//NEED TO DO : Solve the Start button problem DOMException
+//Shorterm Goal : Fininsh the Cross-device WebRTC
 const userName = document.querySelector('input#username')
 const inputRoom = document.querySelector('input#room')
 const btnConnect = document.querySelector('button#connect')
