@@ -83,6 +83,11 @@ io.sockets.on('connection', (socket) => {
     console.log(streamingRoomList)
   })
 
+  socket.on('peerconnectSignaling', (room, message) => {
+    console.log('接收資料：', message);
+    socket.to(room).emit('peerconnectSignaling', message)
+  });
+
   socket.on('stopStreaming', (room, data) => {
     delete streamingRoomList[streamingRoomList.indexOf(room)]
     console.log(data, room)

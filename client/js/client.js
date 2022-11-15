@@ -17,11 +17,21 @@ const audioOutputSelect = document.querySelector('select#audioOutput')
 const videoSelect = document.querySelector('select#videoSource')
 const selectors = [audioInputSelect, audioOutputSelect, videoSelect]
 const videoElement = document.getElementById('player')
-
+const remoteVideo = document.getElementById('remoteVideo')
+const btnstart = document.getElementById('start')
+const btninit = document.getElementById('btninit')
 let socket
 let room
 let peer
 let localStream
+let offer
+
+
+const signalOption = {
+  offerToReceiveAudio: 1, // 是否傳送聲音流給對方
+  offerToReceiveVideo: 1, // 是否傳送影像流給對方
+};
+
 
 // 將讀取到的設備加入到 select 標籤中
 const gotDevices = (deviceInfos) => {
@@ -92,8 +102,10 @@ function changeAudioDestination() {
 
 // 將視訊顯示在 video 標籤上
 function gotStream(stream) {
+  console.log('gotstream')
   videoElement.srcObject = stream
   localStream = stream
+  
   return navigator.mediaDevices.enumerateDevices()
 }
 
@@ -117,6 +129,13 @@ function start() {
     .catch(handleError)
 }
 
+const addLocalStream = () => {
+  console.log('add localstream')
+  localStream.getTracks().forEach((track) => {
+    peer.addTrack(track, localStream);
+  });
+};
+
 //peer connection
 const createPeerConnection = () => {
   const configuration = {
@@ -126,11 +145,91 @@ const createPeerConnection = () => {
    };
   peer = new RTCPeerConnection(configuration)
   console.log('peer created')
-  console.log(peer)
 }
 
-const addLocalStream = () => {
-  peer.addStream(localstream)
+
+/*function createSignal(isOffer) {
+  try {
+    if (!peer) {
+      console.log('尚未開啟視訊')
+      return;
+    }
+    offer =  peer[`create${isOffer ? 'Offer' : 'Answer'}`](signalOption);
+    peer.setLocalDescription(offer);
+    sendSignalingMessage(peer.localDescription, isOffer ? true : false)
+  } catch(err) {
+    console.log(err);
+  }
+}
+
+const sendSignalingMessage = (desc, offer) => {
+  const isOffer = offer ? "offer" : "answer";
+  console.log('peer : ', peer)
+  socket.emit('streaming', room,  { desc })
+  btnStreaming.disabled = true
+  btnPulling.disabled = true
+  btnStopStreaming.disabled = false
+}*/
+
+//new
+// 監聽 ICE Server
+function onIceCandidates() {
+  // 找尋到 ICE 候選位置後，送去 Server 與另一位配對
+  peer.onicecandidate = ({ candidate }) => {
+    if (!candidate) { return; }
+    console.log('onIceCandidate => ', candidate);
+    socket.emit("peerconnectSignaling",room ,{ candidate });
+  };
+};
+
+// 監聽 ICE 連接狀態
+function onIceconnectionStateChange() {
+  peer.oniceconnectionstatechange = (evt) => {
+    console.log('ICE 伺服器狀態變更 => ', evt.target.iceConnectionState);
+  };
+}
+
+// 監聽是否有流傳入，如果有的話就顯示影像
+function onAddStream() {
+  peer.onaddstream = (event) => {
+    if(!remoteVideo.srcObject && event.stream){
+      remoteVideo.srcObject = event.stream;
+      console.log('接收流並顯示於遠端視訊！', event);
+    }
+  }
+}
+
+
+function initPeerConnection() {
+  createPeerConnection();
+  console.log('init peer connection')
+  addLocalStream();
+  onIceCandidates();
+  onIceconnectionStateChange();
+  onAddStream();
+}
+
+async function createSignal(isOffer) {
+  try {
+    if (!peer) {
+      console.log('尚未開啟視訊');
+      return;
+    }
+    // 呼叫 peerConnect 內的 createOffer / createAnswer
+    offer = await peer[`create${isOffer ? 'Offer' : 'Answer'}`](signalOption);
+
+    // 設定本地流配置
+    await peer.setLocalDescription(offer);
+    sendSignalingMessage(peer.localDescription, isOffer ? true : false)
+  } catch(err) {
+    console.log(err);
+  }
+};
+
+function sendSignalingMessage(desc, offer) {
+  const isOffer = offer ? "offer" : "answer";
+  console.log(`寄出 ${isOffer}`);
+  socket.emit("peerconnectSignaling",room ,{ desc });
 };
 
 // 錯誤處理
@@ -141,15 +240,11 @@ function handleError(error) {
     error.name,
   )
 }
+
+
 const streaming = () => {
   navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError)
   start()
-  createPeerConnection()
-  socket.emit('streaming', room, peer)
-  btnStreaming.disabled = true
-  btnPulling.disabled = true
-  btnStopStreaming.disabled = false
-  
 }
 
 const stopStreaming = () => {
@@ -232,6 +327,20 @@ const socketFunc = (process) => {
     socket.disconnect()
   })
 
+  socket.on('peerconnectSignaling', async ({ desc, candidate }) => {
+    // desc 指的是 Offer 與 Answer
+    // currentRemoteDescription 代表的是最近一次連線成功的相關訊息
+    if (desc && !peer.currentRemoteDescription) {
+      console.log('desc => ', desc);
+      
+      await peer.setRemoteDescription(new RTCSessionDescription(desc));
+      createSignal(desc.type === 'answer' ? true : false);
+    } else if (candidate) {
+      // 新增對方 IP 候選位置
+      console.log('candidate =>', candidate);
+      peer.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+  });
 
   //-------------------------
 
@@ -276,3 +385,5 @@ btnStreaming.onclick = () => streaming()
 btnStopStreaming.onclick = () => stopStreaming()
 btnPulling.onclick = () => pulling()
 audioOutputSelect.onchange = changeAudioDestination
+btninit.onclick = () => initPeerConnection()
+btnstart.onclick = () => createSignal()
