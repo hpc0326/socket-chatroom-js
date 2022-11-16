@@ -389,4 +389,4 @@ btnStopStreaming.onclick = () => stopStreaming()
 btnPulling.onclick = () => pulling()
 audioOutputSelect.onchange = changeAudioDestination
 btninit.onclick = () => initPeerConnection()
-btnstart.onclick = () => createSignal()
+btnstart.onclick = () => createSignal(true)
