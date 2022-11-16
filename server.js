@@ -50,6 +50,7 @@ io.sockets.on('connection', (socket) => {
     if(tmp == -1){
       socket.join(room)
       roomList.push(room)
+      streamer.push(socket.id)
       socket.emit('joined', room, socket.id)
     }else if (tmp == 1){
       const msg = 'The room has already been created'
@@ -83,9 +84,22 @@ io.sockets.on('connection', (socket) => {
     console.log(streamingRoomList)
   })
 
-  socket.on('peerconnectSignaling', (room, message) => {
-    console.log('接收資料：', message);
-    socket.to(room).emit('peerconnectSignaling', message)
+  socket.on('peerconnectSignaling', (room, message, ID) => {
+    console.log('接收資料');
+    if(ID != streamer[roomList.indexOf(room)]){
+      //socket.to(room).emit('peerconnectSignaling', message)
+      console.log(ID)
+      if(socket.id == ID){
+        console.log('send streamer')
+        socket.to(streamer[roomList.indexOf(room)]).emit('peerconnectSignaling', message, ID)
+      }else{
+        console.log('send viewer')
+        socket.to(ID).emit('peerconnectSignaling', message, ID)
+      }
+    }else{
+      socket.to(ID).emit('peerconnectSignaling', message, ID)
+    }
+    
   });
 
   socket.on('stopStreaming', (room, data) => {
@@ -98,6 +112,12 @@ io.sockets.on('connection', (socket) => {
     console.log('pulling')
     console.log(streamer[streamingRoomList.indexOf(room)])
     socket.to(streamer[roomList.indexOf(room)]).emit('test','test')
+  })
+
+  socket.in('deleteRoom', (room) => {
+    streamer.splice(roomList.indexOf(room), 1);
+    roomList.splice(roomList.indexOf(room), 1);
+    socket.emit('deleteRoom', 'deleted')
   })
 })
 

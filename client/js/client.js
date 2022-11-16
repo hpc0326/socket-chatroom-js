@@ -23,6 +23,7 @@ const videoElement = document.getElementById('player')
 const remoteVideo = document.getElementById('remoteVideo')
 const btnstart = document.getElementById('start')
 const btninit = document.getElementById('btninit')
+let socketID
 let socket
 let room
 let peer
@@ -151,29 +152,6 @@ const createPeerConnection = () => {
 }
 
 
-/*function createSignal(isOffer) {
-  try {
-    if (!peer) {
-      console.log('尚未開啟視訊')
-      return;
-    }
-    offer =  peer[`create${isOffer ? 'Offer' : 'Answer'}`](signalOption);
-    peer.setLocalDescription(offer);
-    sendSignalingMessage(peer.localDescription, isOffer ? true : false)
-  } catch(err) {
-    console.log(err);
-  }
-}
-
-const sendSignalingMessage = (desc, offer) => {
-  const isOffer = offer ? "offer" : "answer";
-  console.log('peer : ', peer)
-  socket.emit('streaming', room,  { desc })
-  btnStreaming.disabled = true
-  btnPulling.disabled = true
-  btnStopStreaming.disabled = false
-}*/
-
 //new
 // 監聽 ICE Server
 function onIceCandidates() {
@@ -181,7 +159,7 @@ function onIceCandidates() {
   peer.onicecandidate = ({ candidate }) => {
     if (!candidate) { return; }
     console.log('onIceCandidate => ', candidate);
-    socket.emit("peerconnectSignaling",room ,{ candidate });
+    socket.emit("peerconnectSignaling",room ,{ candidate }, socketID);
   };
 };
 
@@ -210,9 +188,12 @@ function initPeerConnection() {
   onIceCandidates();
   onIceconnectionStateChange();
   onAddStream();
+  createSignal(true, socketID);
+  room = inputRoom.value
+  socket.emit('addstreamer',room)
 }
 
-async function createSignal(isOffer) {
+async function createSignal(isOffer, ID) {
   try {
     if (!peer) {
       console.log('尚未開啟視訊');
@@ -223,16 +204,16 @@ async function createSignal(isOffer) {
 
     // 設定本地流配置
     await peer.setLocalDescription(offer);
-    sendSignalingMessage(peer.localDescription, isOffer ? true : false)
+    sendSignalingMessage(peer.localDescription, isOffer ? true : false, ID)
   } catch(err) {
     console.log(err);
   }
 };
 
-function sendSignalingMessage(desc, offer) {
+function sendSignalingMessage(desc, offer, ID) {
   const isOffer = offer ? "offer" : "answer";
   console.log(`寄出 ${isOffer}`);
-  socket.emit("peerconnectSignaling",room ,{ desc });
+  socket.emit("peerconnectSignaling",room ,{ desc }, ID);
 };
 
 // 錯誤處理
@@ -248,6 +229,7 @@ function handleError(error) {
 const streaming = () => {
   navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError)
   start()
+
 }
 
 const stopStreaming = () => {
@@ -258,10 +240,13 @@ const stopStreaming = () => {
 }
 
 const pulling = () => {
-  createPeerConnection()
   console.log('pulling')
-  console.log(peer)
-  socket.emit('pulling', room , peer)
+  createPeerConnection();
+  onIceCandidates();
+  onIceconnectionStateChange();
+  onAddStream();
+  createSignal(true, socketID);
+  
 }
 
 const socketFunc = (process) => {
@@ -273,6 +258,7 @@ const socketFunc = (process) => {
   
 
   socket.on('joined', (room, id) => {
+    socketID = id
     btncreateChannel.disabled = true
     btnConnect.disabled = true
     btnLeave.disabled = false
@@ -304,7 +290,7 @@ const socketFunc = (process) => {
     btnSend.disabled = true
   })
 
-  socket.on('test', (data) => {
+  socket.on('deleteRoom', (data) => {
     console.log(data)
   })
 
@@ -330,14 +316,15 @@ const socketFunc = (process) => {
     socket.disconnect()
   })
 
-  socket.on('peerconnectSignaling', async ({ desc, candidate }) => {
+  socket.on('peerconnectSignaling', async ({ desc, candidate }, ID) => {
     // desc 指的是 Offer 與 Answer
     // currentRemoteDescription 代表的是最近一次連線成功的相關訊息
+    console.log(ID, 'IDDDDDDDDDDDDDDDDDDDDDDDD')
     if (desc && !peer.currentRemoteDescription) {
       console.log('desc => ', desc);
       
       await peer.setRemoteDescription(new RTCSessionDescription(desc));
-      createSignal(desc.type === 'answer' ? true : false);
+      createSignal(desc.type === 'answer' ? true : false, ID);
     } else if (candidate) {
       // 新增對方 IP 候選位置
       console.log('candidate =>', candidate);
@@ -389,4 +376,5 @@ btnStopStreaming.onclick = () => stopStreaming()
 btnPulling.onclick = () => pulling()
 audioOutputSelect.onchange = changeAudioDestination
 btninit.onclick = () => initPeerConnection()
-btnstart.onclick = () => createSignal(true)
+//btnstart.onclick = () => createSignal(true)
+btnLeave.onclick = () => socket.emit('deleteRoom', room)
