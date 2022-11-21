@@ -12,7 +12,6 @@ const inputArea = document.querySelector('textarea#input')
 const btnSend = document.querySelector('button#send')
 const btncreateChannel = document.querySelector('button#createChannel')
 const btnStreaming = document.getElementById('streaming')
-const btnPulling = document.getElementById('pulling')
 const btnStopStreaming = document.getElementById('stopStreaming')
 
 const audioInputSelect = document.querySelector('select#audioSource')
@@ -23,6 +22,7 @@ const videoElement = document.getElementById('player')
 const remoteVideo = document.getElementById('remoteVideo')
 const btnstart = document.getElementById('start')
 const btninit = document.getElementById('btninit')
+
 let socketID
 let socket
 let room
@@ -131,6 +131,10 @@ function start() {
     .then(gotStream)
     .then(gotDevices)
     .catch(handleError)
+
+    btnStreaming.disabled = true
+    btninit.disabled = false
+    btnStopStreaming.disabled = false
 }
 
 const addLocalStream = () => {
@@ -159,7 +163,7 @@ function onIceCandidates() {
   peer.onicecandidate = ({ candidate }) => {
     if (!candidate) { return; }
     console.log('onIceCandidate => ', candidate);
-    socket.emit("peerconnectSignaling",room ,{ candidate }, socketID);
+    socket.emit("peerconnectSignaling",room ,{ candidate });
   };
 };
 
@@ -188,7 +192,7 @@ function initPeerConnection() {
   onIceCandidates();
   onIceconnectionStateChange();
   onAddStream();
-  createSignal(true, socketID);
+  createSignal(true);
   room = inputRoom.value
   socket.emit('addstreamer',room)
 }
@@ -234,19 +238,11 @@ const streaming = () => {
 
 const stopStreaming = () => {
   socket.emit('stopStreaming', room, 'stopstreaming')
+  videoElement.srcObject = null
+  localStream = null
   btnStreaming.disabled = false
-  btnPulling.disabled = false
   btnStopStreaming.disabled = true
-}
-
-const pulling = () => {
-  console.log('pulling')
-  createPeerConnection();
-  onIceCandidates();
-  onIceconnectionStateChange();
-  onAddStream();
-  createSignal(true);
-  
+  btninit.disabled = true
 }
 
 const socketFunc = (process) => {
@@ -264,6 +260,12 @@ const socketFunc = (process) => {
     btnLeave.disabled = false
     inputArea.disabled = false
     btnSend.disabled = false
+    btnStreaming.disabled = false
+
+    audioInputSelect.disabled = false
+    audioOutputSelect.disabled = false
+    videoSelect.disabled = false
+
   })
 
   socket.on('leave', (room, id) => {
@@ -292,6 +294,21 @@ const socketFunc = (process) => {
 
   socket.on('deleteRoom', (data) => {
     console.log(data)
+    btncreateChannel.disabled = false
+    btnConnect.disabled = false
+    btnLeave.disabled = true
+
+    btnStreaming.disabled = true
+    btnStopStreaming.disabled = true
+    btninit.disabled = true
+    audioInputSelect.disabled = true
+    audioOutputSelect.disabled = true
+    videoSelect.disabled = true
+    videoElement.srcObject = null
+    localStream = null
+    peer.close()
+    socket.disconnect()
+    
   })
 
 
@@ -336,10 +353,10 @@ const socketFunc = (process) => {
 
   //exe init
   if(process == 1){
-    console.log('url')
+    console.log('create room')
     socket.emit('create', room)
-    console.log('url')
   }else if (process == 2){
+    console.log('join room')
     socket.emit('join', room)
   }
   //------------------------------
@@ -372,8 +389,6 @@ btncreateChannel.onclick = () => socketFunc(1)
 btnConnect.onclick = () => socketFunc(2)
 btnStreaming.onclick = () => streaming()
 btnStopStreaming.onclick = () => stopStreaming()
-btnPulling.onclick = () => pulling()
 audioOutputSelect.onchange = changeAudioDestination
 btninit.onclick = () => initPeerConnection()
-//btnstart.onclick = () => createSignal(true)
 btnLeave.onclick = () => socket.emit('deleteRoom', room)

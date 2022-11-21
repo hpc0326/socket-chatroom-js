@@ -84,9 +84,8 @@ io.sockets.on('connection', (socket) => {
     console.log(streamingRoomList)
   })
 
-  socket.on('peerconnectSignaling', (room, message, ID) => {
-    console.log('接收資料');
-    socket.to(room).emit('peerconnectSignaling', message, ID)
+  socket.on('peerconnectSignaling', (room, message) => {
+    socket.to(room).emit('peerconnectSignaling', message)
     /*if(ID != streamer[roomList.indexOf(room)]){
       //socket.to(room).emit('peerconnectSignaling', message)
       console.log(ID)
@@ -115,9 +114,10 @@ io.sockets.on('connection', (socket) => {
     socket.to(streamer[roomList.indexOf(room)]).emit('test','test')
   })
 
-  socket.in('deleteRoom', (room) => {
+  socket.on('deleteRoom', (room) => {
     streamer.splice(roomList.indexOf(room), 1);
     roomList.splice(roomList.indexOf(room), 1);
+    console.log(socket.id, ' leaveroom')
     socket.emit('deleteRoom', 'deleted')
   })
 })
