@@ -193,7 +193,7 @@ function initPeerConnection() {
   socket.emit('addstreamer',room)
 }
 
-async function createSignal(isOffer, ID) {
+async function createSignal(isOffer) {
   try {
     if (!peer) {
       console.log('尚未開啟視訊');
@@ -204,16 +204,16 @@ async function createSignal(isOffer, ID) {
 
     // 設定本地流配置
     await peer.setLocalDescription(offer);
-    sendSignalingMessage(peer.localDescription, isOffer ? true : false, ID)
+    sendSignalingMessage(peer.localDescription, isOffer ? true : false)
   } catch(err) {
     console.log(err);
   }
 };
 
-function sendSignalingMessage(desc, offer, ID) {
+function sendSignalingMessage(desc, offer) {
   const isOffer = offer ? "offer" : "answer";
   console.log(`寄出 ${isOffer}`);
-  socket.emit("peerconnectSignaling",room ,{ desc }, ID);
+  socket.emit("peerconnectSignaling",room ,{ desc });
 };
 
 // 錯誤處理
@@ -245,7 +245,7 @@ const pulling = () => {
   onIceCandidates();
   onIceconnectionStateChange();
   onAddStream();
-  createSignal(true, socketID);
+  createSignal(true);
   
 }
 
@@ -316,15 +316,14 @@ const socketFunc = (process) => {
     socket.disconnect()
   })
 
-  socket.on('peerconnectSignaling', async ({ desc, candidate }, ID) => {
+  socket.on('peerconnectSignaling', async ({ desc, candidate }) => {
     // desc 指的是 Offer 與 Answer
     // currentRemoteDescription 代表的是最近一次連線成功的相關訊息
-    console.log(ID, 'IDDDDDDDDDDDDDDDDDDDDDDDD')
+
     if (desc && !peer.currentRemoteDescription) {
       console.log('desc => ', desc);
-      
       await peer.setRemoteDescription(new RTCSessionDescription(desc));
-      createSignal(desc.type === 'answer' ? true : false, ID);
+      createSignal(desc.type === 'answer' ? true : false);
     } else if (candidate) {
       // 新增對方 IP 候選位置
       console.log('candidate =>', candidate);

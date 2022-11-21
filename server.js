@@ -86,7 +86,8 @@ io.sockets.on('connection', (socket) => {
 
   socket.on('peerconnectSignaling', (room, message, ID) => {
     console.log('接收資料');
-    if(ID != streamer[roomList.indexOf(room)]){
+    socket.to(room).emit('peerconnectSignaling', message, ID)
+    /*if(ID != streamer[roomList.indexOf(room)]){
       //socket.to(room).emit('peerconnectSignaling', message)
       console.log(ID)
       if(socket.id == ID){
@@ -98,7 +99,7 @@ io.sockets.on('connection', (socket) => {
       }
     }else{
       socket.to(ID).emit('peerconnectSignaling', message, ID)
-    }
+    }*/
     
   });
 
