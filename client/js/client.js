@@ -23,6 +23,14 @@ const remoteVideo = document.getElementById('remoteVideo')
 const btnstart = document.getElementById('start')
 const btninit = document.getElementById('btninit')
 
+//additional function
+const btnmute = document.getElementById('mute')
+const btnvideoio = document.getElementById('videoio')
+const conditionArea = document.getElementById('conline')
+const urlInput = document.getElementById('urlInput')
+const btnsearch = document.getElementById('search')
+
+
 let socketID
 let socket
 let room
@@ -107,7 +115,15 @@ function changeAudioDestination() {
 // 將視訊顯示在 video 標籤上
 function gotStream(stream) {
   console.log('gotstream')
+  console.log('hello')
   videoElement.srcObject = stream
+  stream.getTracks().forEach(function(track) {
+    if (track.readyState == 'live' && track.kind === 'audio') {
+        track.stop();
+    }
+  }
+  )
+
   localStream = stream
   
   return navigator.mediaDevices.enumerateDevices()
