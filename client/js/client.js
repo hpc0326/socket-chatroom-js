@@ -117,7 +117,12 @@ function gotStream(stream) {
   console.log('gotstream')
   console.log('hello')
   localStream = stream
-  
+  stream.getTracks().forEach(function(track) {
+    if (track.readyState == 'live' && track.kind === 'audio') {
+          track.stop();
+        }
+      }
+    )
   videoElement.srcObject = stream
 
   return navigator.mediaDevices.enumerateDevices()
