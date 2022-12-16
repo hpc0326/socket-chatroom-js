@@ -116,16 +116,10 @@ function changeAudioDestination() {
 function gotStream(stream) {
   console.log('gotstream')
   console.log('hello')
-  videoElement.srcObject = stream
-  stream.getTracks().forEach(function(track) {
-    if (track.readyState == 'live' && track.kind === 'audio') {
-        track.stop();
-    }
-  }
-  )
-
   localStream = stream
   
+  videoElement.srcObject = stream
+
   return navigator.mediaDevices.enumerateDevices()
 }
 
