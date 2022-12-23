@@ -118,10 +118,13 @@ function gotStream(stream) {
   console.log('hello')
   localStream = stream
 
-  videoElement.srcObject = stream
   
+ 
+
+    videoElement.srcObject = stream
   return navigator.mediaDevices.enumerateDevices()
 }
+
 
 // 播放自己的視訊
 function start() {
